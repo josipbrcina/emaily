@@ -27,20 +27,18 @@ passport.use(
       proxy: true
     },
     // Executed after the callback (google authentication)
-    (accessToken, refreshToken, profile, done) => {
+    async (accessToken, refreshToken, profile, done) => {
       // Find user
-      User.findOne({ googleId: profile.id})
-        .then(existingUser => {
-          if (existingUser) {
-            // User exists, call done
-            done(null, existingUser);
-          } else {
-            // User doesn't exist, create new user inside MongoDb
-            new User({ googleId: profile.id })
-              .save()
-              .then(savedUser => done(null, savedUser));
-          }
-      })
+      const existingUser = await User.findOne({ googleId: profile.id });
+
+      if (existingUser) {
+        // User exists, call done (returns existing user to response)
+        return done(null, existingUser);
+      }
+
+      // User doesn't exist, create new user inside MongoDb
+      const savedUser = await new User({ googleId: profile.id }).save();
+      done(null, savedUser);
     }
   )
 );
